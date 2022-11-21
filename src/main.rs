@@ -271,7 +271,8 @@ impl App {
 
     unsafe fn recreate_swapchain(&mut self, window: &Window) -> Result<()> {
         self.device.device_wait_idle()?;
-
+        self.destroy_swapchain();
+        
         create_swapchain(window, &self.instance, &self.device, &mut self.data)?;
         create_swapchain_image_view(&self.device, &mut self.data)?;
         create_render_pass(&self.instance, &self.device, &mut self.data)?;
