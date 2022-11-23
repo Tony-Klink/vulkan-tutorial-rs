@@ -10,10 +10,11 @@ checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
 
 [[package]]
 name = "ahash"
-version = "0.7.6"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcb51a0695d8f838b1ee009b3fbf66bda078cd64590202a864a8f3e8c4315c47"
+checksum = "bf6ccdb167abbf410dcb915cabd428929d7f6a04980b54a11f26a39f1c7f7107"
 dependencies = [
+ "cfg-if",
  "getrandom",
  "once_cell",
  "version_check",
@@ -1170,12 +1171,9 @@ dependencies = [
 
 [[package]]
 name = "tobj"
-version = "3.2.3"
+version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deacee3abcc4fd8ff3f0f7c08d4583ab51753ed1d5a3acacd6d5773f640c27d6"
-dependencies = [
- "ahash",
-]
+checksum = "2468f55be8e59cf7219f1685cf1af4eb00ef2314823a7941a41c8d69538f881b"
 
 [[package]]
 name = "toml"
@@ -1214,6 +1212,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 name = "vk-tutorial"
 version = "0.1.0"
 dependencies = [
+ "ahash",
  "anyhow",
  "lazy_static",
  "log",

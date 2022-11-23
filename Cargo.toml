@@ -13,7 +13,8 @@ nalgebra-glm = "0.17.0"
 png = "0.17.6"
 pretty_env_logger = "0.4.0"
 thiserror = "1.0.37"
-tobj = "3.2.3"
+tobj = {version = "2.0.4", default_features = false }
+ahash = "0.8.2"
 vulkanalia = { version = "0.16.0", features = [
     "libloading",
     "window",
