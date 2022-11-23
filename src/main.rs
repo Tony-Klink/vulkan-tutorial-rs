@@ -41,10 +41,10 @@ const MAX_FRAMES_IN_FLIGHT: usize = 2;
 
 lazy_static! {
     static ref VERTICES: Vec<Vertex> = vec![
-        Vertex::new(glm::vec2(-0.5, -0.5), glm::vec3(1.0, 0.0, 0.0)),
-        Vertex::new(glm::vec2(0.5, -0.5), glm::vec3(0.0, 1.0, 0.0)),
-        Vertex::new(glm::vec2(0.5, 0.5), glm::vec3(0.0, 0.0, 1.0)),
-        Vertex::new(glm::vec2(-0.5, 0.5), glm::vec3(1.0, 1.0, 1.0)),
+        Vertex::new(glm::vec2(-0.5, -0.5), glm::vec3(1.0, 0.0, 0.0), glm::vec2(1.0, 0.0)),
+        Vertex::new(glm::vec2(0.5, -0.5), glm::vec3(0.0, 1.0, 0.0), glm::vec2(0.0, 0.0)),
+        Vertex::new(glm::vec2(0.5, 0.5), glm::vec3(0.0, 0.0, 1.0), glm::vec2(0.0, 1.0)),
+        Vertex::new(glm::vec2(-0.5, 0.5), glm::vec3(1.0, 1.0, 1.0), glm::vec2(1.0, 1.0)),
     ];
 }
 
@@ -1073,11 +1073,12 @@ unsafe fn create_sync_objects(device: &Device, data: &mut AppData) -> Result<()>
 struct Vertex {
     pos: glm::Vec2,
     color: glm::Vec3,
+    tex_coord: glm::Vec2,
 }
 
 impl Vertex {
-    fn new(pos: glm::Vec2, color: glm::Vec3) -> Self {
-        Self { pos, color }
+    fn new(pos: glm::Vec2, color: glm::Vec3, tex_coord: glm::Vec2) -> Self {
+        Self { pos, color, tex_coord }
     }
 
     fn binding_description() -> vk::VertexInputBindingDescription {
@@ -1088,7 +1089,7 @@ impl Vertex {
             .build()
     }
 
-    fn attribute_descriptions() -> [vk::VertexInputAttributeDescription; 2] {
+    fn attribute_descriptions() -> [vk::VertexInputAttributeDescription; 3] {
         let pos = vk::VertexInputAttributeDescription::builder()
             .binding(0)
             .location(0)
@@ -1103,7 +1104,14 @@ impl Vertex {
             .offset(size_of::<glm::Vec2>() as u32)
             .build();
 
-        [pos, color]
+        let tex_coord = vk::VertexInputAttributeDescription::builder()
+            .binding(0)
+            .location(2)
+            .format(vk::Format::R32G32_SFLOAT)
+            .offset((size_of::<glm::Vec2>() + size_of::<glm::Vec3>()) as u32)
+            .build();
+
+        [pos, color, tex_coord]
     }
 }
 
@@ -1272,8 +1280,14 @@ unsafe fn create_descriptor_set_layout(device: &Device, data: &mut AppData) -> R
         .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
         .descriptor_count(1)
         .stage_flags(vk::ShaderStageFlags::VERTEX);
+    
+    let sampler_binding = vk::DescriptorSetLayoutBinding::builder()
+        .binding(1)
+        .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+        .descriptor_count(1)
+        .stage_flags(vk::ShaderStageFlags::FRAGMENT);
 
-    let bindings = &[ubo_binding];
+    let bindings = &[ubo_binding, sampler_binding];
     let info = vk::DescriptorSetLayoutCreateInfo::builder().bindings(bindings);
 
     data.descriptor_set_layout = device.create_descriptor_set_layout(&info, None)?;
@@ -1311,7 +1325,11 @@ unsafe fn create_descriptor_pool(device: &Device, data: &mut AppData) -> Result<
         .type_(vk::DescriptorType::UNIFORM_BUFFER)
         .descriptor_count(data.swapchain_images.len() as u32);
 
-    let pool_sizes = &[ubo_size];
+    let sampler_size = vk::DescriptorPoolSize::builder()
+        .type_(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+        .descriptor_count(data.swapchain_images.len() as u32);
+
+    let pool_sizes = &[ubo_size, sampler_size];
     let info = vk::DescriptorPoolCreateInfo::builder()
         .pool_sizes(pool_sizes)
         .max_sets(data.swapchain_images.len() as u32);
@@ -1343,7 +1361,20 @@ unsafe fn create_descriptor_sets(device: &Device, data: &mut AppData) -> Result<
             .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
             .buffer_info(buffer_info);
 
-        device.update_descriptor_sets(&[ubo_write], &[] as &[vk::CopyDescriptorSet]);
+        let info = vk::DescriptorImageInfo::builder()
+            .image_layout(vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL)
+            .image_view(data.texture_image_view)
+            .sampler(data.texture_sampler);
+
+        let image_info = &[info];
+        let sampler_write = vk::WriteDescriptorSet::builder()
+            .dst_set(data.descriptor_sets[i])
+            .dst_binding(1)
+            .dst_array_element(0)
+            .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
+            .image_info(image_info);
+
+        device.update_descriptor_sets(&[ubo_write, sampler_write], &[] as &[vk::CopyDescriptorSet]);
     }
 
     Ok(())
