@@ -380,12 +380,15 @@ impl App {
     }
 
     unsafe fn update_command_buffer(&mut self, image_index: usize) -> Result<()> {
-        let command_buffer = self.data.command_buffers[image_index];
+        let previous = self.data.command_buffers[image_index];
+        self.device.free_command_buffers(self.data.command_pool, &[previous]);
 
-        self.device.reset_command_buffer(
-            command_buffer,
-            vk::CommandBufferResetFlags::empty(),
-        )?;
+        let allocate_info = vk::CommandBufferAllocateInfo::builder()
+            .command_pool(self.data.command_pool)
+            .level(vk::CommandBufferLevel::PRIMARY)
+            .command_buffer_count(1);
+        let command_buffer = self.device.allocate_command_buffers(&allocate_info)?[0];
+        self.data.command_buffers[image_index] = command_buffer;
 
         let time = self.start.elapsed().as_secs_f32();
 
@@ -1164,7 +1167,7 @@ unsafe fn create_command_pool(
     let indices = QueueFamilyIndices::get(instance, data, data.physical_device)?;
 
     let info = vk::CommandPoolCreateInfo::builder()
-        .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER)
+        .flags(vk::CommandPoolCreateFlags::TRANSIENT)
         .queue_family_index(indices.graphics);
 
     data.command_pool = device.create_command_pool(&info, None)?;
