@@ -1337,21 +1337,18 @@ impl Vertex {
             .format(vk::Format::R32G32B32_SFLOAT)
             .offset(0)
             .build();
-
         let color = vk::VertexInputAttributeDescription::builder()
             .binding(0)
             .location(1)
             .format(vk::Format::R32G32B32_SFLOAT)
-            .offset(size_of::<glm::Vec2>() as u32)
+            .offset(size_of::<glm::Vec3>() as u32)
             .build();
-
         let tex_coord = vk::VertexInputAttributeDescription::builder()
             .binding(0)
             .location(2)
             .format(vk::Format::R32G32_SFLOAT)
-            .offset((size_of::<glm::Vec2>() + size_of::<glm::Vec3>()) as u32)
+            .offset((size_of::<glm::Vec3>() + size_of::<glm::Vec3>()) as u32)
             .build();
-
         [pos, color, tex_coord]
     }
 }
@@ -1646,7 +1643,7 @@ unsafe fn create_texture_image(
     device: &Device,
     data: &mut AppData,
 ) -> Result<()> {
-    let image = File::open("resources/viking_room.png")?;
+    let image = File::open("resources/Rat.png")?;
 
     let decoder = png::Decoder::new(image);
     let mut reader = decoder.read_info()?;
@@ -2081,7 +2078,7 @@ unsafe fn get_depth_format(instance: &Instance, data: &AppData) -> Result<vk::Fo
 }
 
 fn load_model(data: &mut AppData) -> Result<()> {
-    let mut reader = BufReader::new(File::open("resources/viking_room.obj")?);
+    let mut reader = BufReader::new(File::open("resources/Rat.obj")?);
 
     let (models, _) = tobj::load_obj_buf(&mut reader, true, |_| {
         let mut map = HashMap::new();
